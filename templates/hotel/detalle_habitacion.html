@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load hotel_tags %}
+
+{% block titulo %}{{ habitacion.nombre }} - Detalle{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid">
+    
+    <!-- NAVEGACIÓN DE REGRESO -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'hotel:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'hotel:panel_habitaciones' %}">Panel de Habitaciones</a></li>
+            <li class="breadcrumb-item active">{{ habitacion.codigo }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- COLUMNA IZQUIERDA: FOTOS E INFO BÁSICA -->
+        <div class="col-lg-7">
+            <!-- CARRUSEL DE FOTOS -->
+            {% with fotos=habitacion.fotos.all %}
+                {% if fotos %}
+                <div id="carouselHabitacion" class="carousel slide mb-4 shadow rounded" data-bs-ride="carousel">
+                    <div class="carousel-indicators">
+                        {% for foto in fotos %}
+                        <button type="button" data-bs-target="#carouselHabitacion" 
+                                data-bs-slide-to="{{ forloop.counter0 }}" 
+                                {% if forloop.first %}class="active"{% endif %}>
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <div class="carousel-inner rounded">
+                        {% for foto in fotos %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <img src="{{ foto.imagen.url }}" 
+                                 class="d-block w-100" 
+                                 alt="Foto {{ forloop.counter }}"
+                                 style="height: 400px; object-fit: cover;">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselHabitacion" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon"></span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselHabitacion" data-bs-slide="next">
+                        <span class="carousel-control-next-icon"></span>
+                    </button>
+                </div>
+                {% else %}
+                <div class="bg-light rounded d-flex align-items-center justify-content-center mb-4" style="height: 400px;">
+                    <div class="text-center text-muted">
+                        <i class="bi bi-camera" style="font-size: 5rem;"></i>
+                        <p class="mt-2">Sin fotos disponibles</p>
+                    </div>
+                </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- INFORMACIÓN DETALLADA -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Información de la Habitación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Código:</strong> {{ habitacion.codigo }}</p>
+                            <p><strong>Nombre:</strong> {{ habitacion.nombre }}</p>
+                            <p><strong>Tipo:</strong> {{ habitacion.tipo.nombre }}</p>
+                            <p><strong>Capacidad Máxima:</strong> {{ habitacion.tipo.capacidad_maxima }} personas</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Ubicación:</strong> {{ habitacion.ubicacion.nombre }}</p>
+                            <p><strong>Piso:</strong> {{ habitacion.piso }}</p>
+                            <p><strong>Extensión:</strong> {{ habitacion.extension_telefono|default:"N/A" }}</p>
+                            <p>
+                                <strong>Estado Actual:</strong> 
+                                {% badge_estado habitacion.estado_str %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- CARACTERÍSTICAS -->
+                    {% with caracteristicas=habitacion.tipo.caracteristicas.all %}
+                        {% if caracteristicas %}
+                        <hr>
+                        <h6>Características:</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for caracteristica in caracteristicas %}
+                            <span class="badge bg-light text-dark border">
+                                <i class="bi bi-{{ caracteristica.icono }} me-1"></i>
+                                {{ caracteristica.nombre }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <!-- NOTAS INTERNAS (solo empleados) -->
+                    {% if habitacion.notas_internas %}
+                    <hr>
+                    <h6 class="text-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>Notas Internas:
+                    </h6>
+                    <p class="text-muted small">{{ habitacion.notas_internas }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: ESTADO ACTUAL Y ACCIONES -->
+        <div class="col-lg-5">
+            
+            <!-- HUÉSPED ACTUAL (si está ocupada) -->
+            {% if hospedaje_activo %}
+            <div class="card shadow-sm mb-4 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-person-fill me-2"></i>Huésped Actual
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <h5>{{ hospedaje_activo.huesped.nombre_completo }}</h5>
+                    <p class="mb-1">
+                        <i class="bi bi-credit-card me-1"></i>
+                        {{ hospedaje_activo.huesped.documento_identidad }}
+                    </p>
+                    <p class="mb-1">
+                        <i class="bi bi-calendar-check me-1"></i>
+                        Check-in: {{ hospedaje_activo.fecha_checkin|date:"d/m/Y H:i" }}
+                    </p>
+                    <p class="mb-1">
+                        <i class="bi bi-moon me-1"></i>
+                        Noches: {{ hospedaje_activo.noches_estadia }}
+                    </p>
+                    <p class="mb-1">
+                        <i class="bi bi-cash me-1"></i>
+                        Tarifa: ${{ hospedaje_activo.tarifa_aplicada }}/noche
+                    </p>
+                    <p class="mb-0">
+                        <i class="bi bi-calculator me-1"></i>
+                        <strong>Total actual: ${{ hospedaje_activo.total_estadia }}</strong>
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <button class="btn btn-danger btn-sm w-100">
+                        <i class="bi bi-door-closed me-1"></i>Realizar Check-out
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ACCIONES RÁPIDAS -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightning-charge me-2"></i>Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if habitacion.esta_disponible %}
+                    <button class="btn btn-success w-100 mb-2">
+                        <i class="bi bi-door-open me-2"></i>Realizar Check-in
+                    </button>
+                    {% endif %}
+                    
+                    <button class="btn btn-outline-warning w-100 mb-2">
+                        <i class="bi bi-broom me-2"></i>Marcar en Limpieza
+                    </button>
+                    
+                    <button class="btn btn-outline-secondary w-100 mb-2">
+                        <i class="bi bi-tools me-2"></i>Marcar Mantenimiento
+                    </button>
+                    
+                    {% if not habitacion.esta_disponible and not habitacion.esta_ocupada %}
+                    <button class="btn btn-outline-success w-100">
+                        <i class="bi bi-check-circle me-2"></i>Marcar Disponible
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- HISTORIAL DE ESTADOS -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-clock-history me-2"></i>Historial de Estados
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if historial_estados %}
+                    <div class="list-group list-group-flush">
+                        {% for estado in historial_estados %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>{% badge_estado estado.estado %}</span>
+                                <small class="text-muted">{{ estado.fecha_inicio|date:"d/m/Y H:i" }}</small>
+                            </div>
+                            {% if estado.notas %}
+                            <small class="text-muted d-block mt-1">{{ estado.notas }}</small>
+                            {% endif %}
+                            {% if estado.fecha_fin %}
+                            <small class="text-muted">
+                                Duración: {{ estado.duracion }}
+                            </small>
+                            {% else %}
+                            <small class="text-success fw-bold">Vigente</small>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center p-3 mb-0">Sin historial de estados</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

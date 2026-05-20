@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load hotel_tags %}
+
+{% block titulo %}{{ modo }} {{ config.titulo_singular }}{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'hotel:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ config.success_url }}">{{ config.titulo_plural }}</a></li>
+            <li class="breadcrumb-item active">{{ modo }} {{ config.titulo_singular }}</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white border-bottom d-flex align-items-center">
+                    <i class="bi {{ config.icono }} fs-5 me-2 text-primary"></i>
+                    <h5 class="mb-0">{{ modo }} {{ config.titulo_singular }}</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        
+                        {% for field in form %}
+                            {{ field|bootstrap_field|safe }}
+                        {% endfor %}
+                        
+                        <hr class="mt-4">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ config.success_url }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-lg me-1"></i>Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

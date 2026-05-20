@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load hotel_tags %}
+
+{% block titulo %}{{ modo }} Habitación{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'hotel:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'hotel:crud_habitacion_lista' %}">Habitaciones</a></li>
+            <li class="breadcrumb-item active">{{ modo }}</li>
+        </ol>
+    </nav>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-lg-7">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-white"><h5 class="mb-0">Datos de la Habitación</h5></div>
+                    <div class="card-body">
+                        {% for field in form %}
+                            {{ field|bootstrap_field|safe }}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-white"><h5 class="mb-0">Fotos</h5></div>
+                    <div class="card-body">
+                        {{ fotos_formset.management_form }}
+                        <div class="row" id="fotos-container">
+                            {% for foto_form in fotos_formset %}
+                            <div class="col-md-6 mb-3 foto-row">
+                                <div class="card">
+                                    <div class="card-body p-2">
+                                        <div class="mb-2">
+                                            <img src="{% if foto_form.instance.imagen %}{{ foto_form.instance.thumbnail.url }}{% endif %}" 
+                                                class="img-thumbnail foto-preview w-100" 
+                                                style="height:120px;object-fit:cover;{% if not foto_form.instance.imagen %}display:none{% endif %}">
+                                            <div class="text-muted text-center py-4 foto-placeholder" 
+                                                style="{% if foto_form.instance.imagen %}display:none{% endif %}">
+                                                <i class="bi bi-image fs-1"></i>
+                                            </div>
+                                        </div>
+                                        {{ foto_form.imagen }}
+                                        <div class="form-check form-switch mt-1">
+                                            {{ foto_form.es_principal }}
+                                            <label class="form-check-label small">Principal</label>
+                                        </div>
+                                        {{ foto_form.orden.as_hidden }}
+                                        {{ foto_form.id.as_hidden }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'hotel:crud_habitacion_lista' %}" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary px-4">Guardar</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('input[type="file"]').forEach(input => {
+        input.addEventListener('change', function() {
+            const preview = this.closest('.foto-row').querySelector('.foto-preview');
+            const placeholder = this.closest('.foto-row').querySelector('.foto-placeholder');
+            const file = this.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = '';
+                    placeholder.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .foto-row input[type="file"] {
+        font-size: .8rem;
+        width: 100%;
+    }
+</style>
+{% endblock %}

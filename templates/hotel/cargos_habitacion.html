@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block titulo %}Cargos a Habitación - Hotel Manager{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid">
+    <h3 class="mb-4"><i class="bi bi-cart-plus me-2"></i>Cargar Consumo a Habitación</h3>
+    
+    <div class="row">
+        <!-- HABITACIONES OCUPADAS -->
+        <div class="col-md-4">
+            <div class="card shadow mb-3">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0"><i class="bi bi-door-closed me-2"></i>Habitaciones Ocupadas</h6>
+                </div>
+                <div class="list-group list-group-flush" id="listaHabitacionesOcupadas">
+                    <div class="list-group-item text-muted">Cargando...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- PRODUCTOS -->
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="mb-0"><i class="bi bi-cup-hot me-2"></i>Productos</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <select id="filtroGrupo" class="form-select form-select-sm">
+                                <option value="">Todos los grupos</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="listaProductos">
+                        <div class="col-12 text-muted">Seleccione una habitación para cargar consumos.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CONFIRMAR CARGO -->
+<div class="modal fade" id="confirmarCargoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h6 class="modal-title">Confirmar Cargo</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="cargoDetalle"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning btn-sm" id="btnConfirmarCargo">Cargar a Habitación</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    'use strict';
+    
+    let habitacionSeleccionada = null;
+    let hospedajeActivoId = null;
+    const cargoModal = new bootstrap.Modal(document.getElementById('confirmarCargoModal'));
+    
+    // Cargar habitaciones ocupadas
+    fetch('/hotel/api/habitaciones-ocupadas/')
+        .then(r => r.json())
+        .then(data => {
+            const lista = document.getElementById('listaHabitacionesOcupadas');
+            if (data.length === 0) {
+                lista.innerHTML = '<div class="list-group-item text-muted">No hay habitaciones ocupadas</div>';
+                return;
+            }
+            lista.innerHTML = '';
+            data.forEach(h => {
+                lista.innerHTML += `
+                    <a href="#" class="list-group-item list-group-item-action habitacion-item"
+                       data-hospedaje="${h.hospedaje_id}" data-codigo="${h.codigo}" data-huesped="${h.huesped}">
+                        <strong>Hab. ${h.codigo}</strong><br>
+                        <small>${h.huesped}</small><br>
+                        <small class="text-muted">${h.noches} noches | Total actual: $ ${formatoNumeroLocal(h.total_actual)}</small>
+                    </a>
+                `;
+            });
+            
+            // Evento click en habitación
+            document.querySelectorAll('.habitacion-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.querySelectorAll('.habitacion-item').forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                    habitacionSeleccionada = this.dataset.codigo;
+                    hospedajeActivoId = this.dataset.hospedaje;
+                });
+            });
+        });
+    
+    // Cargar productos
+    fetch('/hotel/api/productos/')
+        .then(r => r.json())
+        .then(data => {
+            // Llenar filtro de grupos
+            const grupos = [...new Set(data.map(p => p.grupo))];
+            const filtro = document.getElementById('filtroGrupo');
+            grupos.forEach(g => {
+                filtro.innerHTML += `<option value="${g}">${g}</option>`;
+            });
+            
+            // Mostrar productos
+            mostrarProductos(data);
+            
+            // Filtrar por grupo
+            filtro.addEventListener('change', function() {
+                const grupo = this.value;
+                const filtrados = grupo ? data.filter(p => p.grupo === grupo) : data;
+                mostrarProductos(filtrados);
+            });
+        });
+    
+    function mostrarProductos(productos) {
+        const contenedor = document.getElementById('listaProductos');
+        contenedor.innerHTML = '';
+        productos.forEach(p => {
+            contenedor.innerHTML += `
+                <div class="col-lg-3 col-md-4 col-6 mb-3">
+                    <div class="card h-100 producto-card" style="cursor:pointer"
+                         data-id="${p.id}" data-descripcion="${p.descripcion}" data-precio="${p.precio_huesped}">
+                        <div class="card-body text-center p-2">
+                            <h6 class="card-title mb-1 small">${p.descripcion}</h6>
+                            <span class="badge bg-success">$ ${formatoNumeroLocal(p.precio_huesped)}</span>
+                            <br><small class="text-muted">Púb: $ ${formatoNumeroLocal(p.precio_publico)}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        // Evento click en producto
+        document.querySelectorAll('.producto-card').forEach(card => {
+            card.addEventListener('click', function() {
+                if (!habitacionSeleccionada) {
+                    alert('Primero seleccione una habitación ocupada');
+                    return;
+                }
+                document.getElementById('cargoDetalle').innerHTML = `
+                    <p><strong>Habitación:</strong> ${habitacionSeleccionada}</p>
+                    <p><strong>Producto:</strong> ${this.dataset.descripcion}</p>
+                    <p><strong>Precio:</strong> $${this.dataset.precio}</p>
+                    <input type="hidden" id="cargoProductoId" value="${this.dataset.id}">
+                    <input type="text" id="cargoPrecio" class="form-control input-moneda" value="${this.dataset.precio}">
+                    <label class="form-label">Cantidad</label>
+                    <input type="number" id="cargoCantidad" class="form-control" value="1" min="1">
+                `;
+                cargoModal.show();
+                // Inicializar AutoNumeric en el input recién creado
+                const precioInput = document.getElementById('cargoPrecio');
+                if (precioInput && typeof AutoNumeric !== 'undefined') {
+                    new AutoNumeric(precioInput, configAutoNumeric);
+                }
+            });
+        });
+    }
+    
+    // Confirmar cargo
+    document.getElementById('btnConfirmarCargo').addEventListener('click', function() {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const datos = {
+            registro_hospedaje_id: hospedajeActivoId,
+            producto_id: document.getElementById('cargoProductoId').value,
+            cantidad: document.getElementById('cargoCantidad').value,
+            precio_unitario: getAutoNumericValue(document.getElementById('cargoPrecio')),
+        };
+        
+        fetch('/hotel/api/cargar-consumo/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify(datos)
+        })
+        .then(r => r.json().then(data => ({ status: r.status, data })))
+        .then(({ status, data }) => {
+            if (status === 201) {
+                alert('✅ ' + data.mensaje);
+                cargoModal.hide();
+            } else {
+                alert('❌ ' + (data.error || 'Error'));
+            }
+        });
+    });
+    
+})();
+</script>
+{% endblock %}

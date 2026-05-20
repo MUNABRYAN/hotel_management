@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load hotel_tags %}
+
+{% block titulo %}Habitaciones - Administración{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'hotel:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Habitaciones</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4><i class="bi bi-door-open me-2 text-primary"></i>Habitaciones</h4>
+        <a href="{% url 'hotel:crud_habitacion_crear' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Nueva
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table id="datatable" class="table table-hover align-middle w-100">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Foto</th>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Tipo</th>
+                        <th>Ubicación</th>
+                        <th>Piso</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hab in habitaciones %}
+                    <tr>
+                        <td class="small">{{ forloop.counter }}</td>
+                        <td>
+                            {% with foto=hab.foto_principal %}
+                                {% if foto %}
+                                <img src="{{ foto.thumbnail.url }}" width="60" class="rounded">
+                                {% else %}
+                                <i class="bi bi-building text-muted fs-3"></i>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td><strong>{{ hab.codigo }}</strong></td>
+                        <td>{{ hab.nombre }}</td>
+                        <td>{{ hab.tipo.nombre }}</td>
+                        <td>{{ hab.ubicacion.nombre }}</td>
+                        <td>{{ hab.piso }}</td>
+                        <td>{% badge_estado hab.estado_str %}</td>
+                        <td class="text-end">
+                            <a href="{% url 'hotel:detalle_habitacion' hab.pk %}" class="btn btn-sm btn-outline-info" title="Ver">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'hotel:crud_habitacion_editar' hab.pk %}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'hotel:crud_habitacion_eliminar' hab.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#datatable').DataTable({
+        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json' },
+        pageLength: 25,
+        responsive: true
+    });
+});
+</script>
+{% endblock %}

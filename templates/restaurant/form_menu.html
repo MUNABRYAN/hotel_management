@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Nuevo Menú - Hotel Manager{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-5">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Nuevo Menú del Día</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Nombre del Menú</label>
+                            <input type="text" name="nombre" class="form-control" placeholder="Ej: Menú Ejecutivo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fecha</label>
+                            <input type="date" name="fecha" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Precio del Menú Completo ($)</label>
+                            <input type="number" name="precio" class="form-control" step="0.01" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" name="disponible" class="form-check-input" checked id="id_disponible">
+                            <label class="form-check-label" for="id_disponible">Disponible</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Guardar Menú</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,622 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load hotel_tags %}
+
+{% block titulo %}Panel de Habitaciones - Hotel Manager{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid">
+    
+    <!-- ENCABEZADO CON FILTROS -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">
+            <i class="bi bi-grid-3x3-gap-fill me-2"></i>Panel de Habitaciones
+        </h1>
+        <div>
+            <!-- Botones de filtro rápido -->
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-success btn-sm filtro-estado" data-estado="DISPONIBLE">
+                    <i class="bi bi-check-circle me-1"></i>Disponibles
+                </button>
+                <button type="button" class="btn btn-outline-danger btn-sm filtro-estado" data-estado="OCUPADA">
+                    <i class="bi bi-door-closed me-1"></i>Ocupadas
+                </button>
+                <button type="button" class="btn btn-outline-warning btn-sm filtro-estado" data-estado="SUCIA">
+                    <i class="bi bi-broom me-1"></i>Limpieza
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm filtro-estado" data-estado="MANTENIMIENTO">
+                    <i class="bi bi-tools me-1"></i>Mantenimiento
+                </button>
+                <button type="button" class="btn btn-outline-dark btn-sm" id="btn-mostrar-todos">
+                    <i class="bi bi-grid-fill me-1"></i>Todos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LEYENDA -->
+    <div class="mb-3">
+        <small class="text-muted me-3">
+            <span class="badge bg-success me-1">&nbsp;</span> Disponible
+        </small>
+        <small class="text-muted me-3">
+            <span class="badge bg-danger me-1">&nbsp;</span> Ocupada
+        </small>
+        <small class="text-muted me-3">
+            <span class="badge bg-warning me-1">&nbsp;</span> Limpieza
+        </small>
+        <small class="text-muted me-3">
+            <span class="badge bg-secondary me-1">&nbsp;</span> Mantenimiento
+        </small>
+        <small class="text-muted">
+            <span class="badge bg-primary me-1">&nbsp;</span> Reservada
+        </small>
+    </div>
+
+    <!-- GRID DE HABITACIONES POR PISO -->
+    {% for piso, habitaciones in habitaciones_por_piso.items %}
+    <div class="mb-5">
+        <!-- Título del piso -->
+        <h5 class="border-bottom pb-2 mb-3">
+            <i class="bi bi-building me-2"></i>
+            Piso {{ piso }}
+            <span class="badge bg-secondary ms-2">{{ habitaciones|length }} hab.</span>
+        </h5>
+        
+        <!-- Grid de tarjetas -->
+        <div class="row">
+            {% for habitacion in habitaciones %}
+            <div class="col-xl-3 col-lg-4 col-md-6 mb-4 tarjeta-habitacion" data-estado="{{ habitacion.estado_str }}">
+                <div class="card {% tarjeta_estado habitacion.estado_str %} shadow-sm h-100 hover-card">
+                    
+                    <!-- FOTO PRINCIPAL -->
+                    {% with foto=habitacion.foto_principal %}
+                        {% if foto %}
+                            <img src="{{ foto.imagen.url }}" 
+                                 class="card-img-top" 
+                                 alt="{{ habitacion.nombre }}"
+                                 style="height: 180px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                                 style="height: 180px;">
+                                <i class="bi bi-building text-muted" style="font-size: 4rem;"></i>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <div class="card-body">
+                        <!-- CÓDIGO Y ESTADO -->
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title mb-0">
+                                <strong>{{ habitacion.codigo }}</strong>
+                            </h6>
+                            {% badge_estado habitacion.estado_str %}
+                        </div>
+                        
+                        <!-- NOMBRE Y TIPO -->
+                        <p class="card-text small text-muted mb-2">
+                            {{ habitacion.nombre }}
+                            <br>
+                            <i class="bi bi-tag me-1"></i>{{ habitacion.tipo.nombre }}
+                        </p>
+                        
+                        <!-- CAPACIDAD -->
+                        <p class="mb-2">
+                            <i class="bi bi-people-fill text-muted me-1"></i>
+                            <small>Capacidad: {{ habitacion.tipo.capacidad_maxima }} pers.</small>
+                        </p>
+                        
+                        <!-- UBICACIÓN -->
+                        <p class="mb-0">
+                            <i class="bi bi-geo-alt-fill text-muted me-1"></i>
+                            <small>{{ habitacion.ubicacion.nombre }}</small>
+                        </p>
+                    </div>
+                    
+
+                    <!-- BOTONES DE ACCIÓN -->
+                    <div class="card-footer bg-transparent border-top-0">
+                        <div class="d-flex justify-content-between">
+                            <!-- Botón Ver Detalle (siempre visible) -->
+                            <a href="{% url 'hotel:detalle_habitacion' habitacion.pk %}" 
+                            class="btn btn-sm btn-outline-dark" 
+                            title="Ver detalle">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            
+                            <!-- ACCIONES SEGÚN ESTADO -->
+                            {% if habitacion.esta_disponible %}
+                            <!-- Si está disponible: Check-in, Reservar y Limpieza -->
+                            <button class="btn btn-sm btn-success btn-checkin" 
+                                    data-habitacion-id="{{ habitacion.pk }}"
+                                    data-habitacion-codigo="{{ habitacion.codigo }}"
+                                    title="Realizar check-in">
+                                <i class="bi bi-door-open"></i> Check-in
+                            </button>
+                            <a href="{% url 'hotel:nueva_reserva' %}" 
+                            class="btn btn-sm btn-outline-primary" 
+                            title="Ir al buscador de reservas">
+                                <i class="bi bi-calendar-plus"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-warning btn-cambiar-estado"
+                                    data-accion="limpiar"
+                                    data-habitacion-id="{{ habitacion.pk }}">
+                                <i class="bi bi-broom"></i>
+                            </button>
+                            
+                            {% elif habitacion.esta_ocupada %}
+                            <!-- Si está ocupada: Check-out -->
+                            <form method="post" action="{% url 'hotel:cambiar_estado_habitacion' habitacion.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="accion" value="checkout">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Realizar check-out">
+                                    <i class="bi bi-door-closed"></i> Check-out
+                                </button>
+                            </form>
+                            <button class="btn btn-sm btn-outline-secondary btn-cambiar-estado"
+                                    data-accion="mantenimiento"
+                                    data-habitacion-id="{{ habitacion.pk }}">
+                                <i class="bi bi-tools"></i>
+                            </button>
+                            
+                            {% else %}
+                            <!-- Otros estados: Marcar disponible -->
+                            <form method="post" action="{% url 'hotel:cambiar_estado_habitacion' habitacion.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="accion" value="disponible">
+                                <button type="submit" class="btn btn-sm btn-outline-success" title="Marcar disponible">
+                                    <i class="bi bi-check-circle"></i> Disponible
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'hotel:cambiar_estado_habitacion' habitacion.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="accion" value="limpiar">
+                                <button type="submit" class="btn btn-sm btn-outline-warning">
+                                    <i class="bi bi-broom"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>                    
+                    
+
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% empty %}
+    <!-- MENSAJE SI NO HAY HABITACIONES -->
+    <div class="text-center py-5">
+        <i class="bi bi-building-slash text-muted" style="font-size: 5rem;"></i>
+        <h4 class="mt-3 text-muted">No hay habitaciones registradas</h4>
+        <p class="text-muted">Ve al <a href="/admin/">panel de administración</a> para crear habitaciones.</p>
+    </div>
+    {% endfor %}
+
+</div>
+
+<!-- =============================================================================
+MODAL DE CHECK-IN - VERSIÓN FUNCIONAL
+Carga huéspedes vía AJAX y permite crear uno nuevo.
+============================================================================= -->
+<div class="modal fade" id="checkinModal" tabindex="-1" aria-labelledby="checkinModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="checkinForm" method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="checkin">
+                
+                <!-- Encabezado -->
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="checkinModalLabel">
+                        <i class="bi bi-door-open me-2"></i>
+                        Check-in - Habitación <span id="modalHabitacionCodigo">---</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <!-- Cuerpo -->
+                <div class="modal-body">
+                    <!-- Alertas dinámicas (se llenan con JavaScript) -->
+                    <div id="checkinAlertas"></div>
+                    <div class="row">
+                        <!-- Columna: Seleccionar huésped existente -->
+                        <div class="col-md-6 border-end">
+                            <h6 class="fw-bold mb-3">
+                                <i class="bi bi-people me-2"></i>Huésped Existente
+                            </h6>
+                            <div class="mb-3">
+                                <label for="huespedSelect" class="form-label">Buscar huésped</label>
+                                <select name="huesped_id" id="huespedSelect" class="form-select" required>
+                                    <option value="">Cargando huéspedes...</option>
+                                </select>
+                                <div class="mb-3 mt-3">
+                                    <label for="clienteSelect" class="form-label fw-bold small">
+                                        <i class="bi bi-receipt me-1"></i>Facturar a
+                                    </label>
+                                    <select name="cliente_id" id="clienteSelect" class="form-select">
+                                        <option value="">Mismo huésped</option>
+                                    </select>
+                                    <small class="text-muted">Seleccione un cliente si es distinto al huésped</small>
+                                </div>
+                            </div>
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-outline-success btn-sm" id="btnHuespedNuevo">
+                                    <i class="bi bi-person-plus me-1"></i>Crear Nuevo Huésped
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Columna: Datos de la estadía -->
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">
+                                <i class="bi bi-calendar-check me-2"></i>Datos de Estadía
+                            </h6>
+                            <div class="mb-3">
+                                <label for="cantidadPersonas" class="form-label">Cantidad de personas</label>
+                                <input type="number" name="cantidad_personas" id="cantidadPersonas" 
+                                       class="form-control" min="1" value="1" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="tarifaInput" class="form-label">Tarifa por noche ($)</label>
+                                <input type="number" name="tarifa" id="tarifaInput" class="form-control input-moneda" placeholder="Tarifa por noche" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="notasCheckin" class="form-label">Notas (opcional)</label>
+                                <textarea name="notas_checkin" id="notasCheckin" 
+                                          class="form-control" rows="2" placeholder="Ej: Llegada tarde, solicita almohada extra..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pie -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success" id="btnConfirmarCheckin">
+                        <i class="bi bi-check-lg me-1"></i>Confirmar Check-in
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- =============================================================================
+MODAL PARA CREAR NUEVO HUÉSPED (sub-modal dentro del check-in)
+============================================================================= -->
+<div class="modal fade" id="nuevoHuespedModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h6 class="modal-title">
+                    <i class="bi bi-person-plus me-2"></i>Nuevo Huésped
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nombres *</label>
+                        <input type="text" class="form-control" id="nuevoNombres" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Apellidos *</label>
+                        <input type="text" class="form-control" id="nuevoApellidos" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Documento de Identidad *</label>
+                    <input type="text" class="form-control" id="nuevoDocumento" placeholder="V12345678" required>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nacionalidad</label>
+                        <input type="text" class="form-control" id="nuevoNacionalidad" value="Venezolano">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Teléfono *</label>
+                        <input type="text" class="form-control" id="nuevoTelefono" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" id="nuevoEmail">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnGuardarNuevoHuesped">
+                    <i class="bi bi-save me-1"></i>Guardar Huésped
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/**
+ * SISTEMA DE CHECK-IN Y CAMBIO DE ESTADOS
+ * Arquitectura: Módulo IIFE (Immediately Invoked Function Expression)
+ * para evitar contaminar el scope global.
+ */
+(function() {
+    'use strict';
+    
+    // =========================================================================
+    // REFERENCIAS A ELEMENTOS DEL DOM
+    // =========================================================================
+    const checkinModal = new bootstrap.Modal(document.getElementById('checkinModal'));
+    const nuevoHuespedModal = new bootstrap.Modal(document.getElementById('nuevoHuespedModal'));
+    const checkinForm = document.getElementById('checkinForm');
+    const huespedSelect = document.getElementById('huespedSelect');
+    const modalHabitacionCodigo = document.getElementById('modalHabitacionCodigo');
+    
+    // =========================================================================
+    // FILTROS DE HABITACIONES
+    // =========================================================================
+    function inicializarFiltros() {
+        // Leer filtro de la URL (?estado=DISPONIBLE)
+        const urlParams = new URLSearchParams(window.location.search);
+        const estadoFiltro = urlParams.get('estado');
+        if (estadoFiltro) {
+            const botonFiltro = document.querySelector(`.filtro-estado[data-estado="${estadoFiltro}"]`);
+            if (botonFiltro) {
+                botonFiltro.click();
+            }
+        }
+        const tarjetas = document.querySelectorAll('.tarjeta-habitacion');
+        const botonesFiltro = document.querySelectorAll('.filtro-estado');
+        const btnTodos = document.getElementById('btn-mostrar-todos');
+        
+        botonesFiltro.forEach(boton => {
+            boton.addEventListener('click', function() {
+                const estadoSeleccionado = this.dataset.estado;
+                botonesFiltro.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                tarjetas.forEach(tarjeta => {
+                    tarjeta.style.display = tarjeta.dataset.estado === estadoSeleccionado ? '' : 'none';
+                });
+            });
+        });
+        
+        if (btnTodos) {
+            btnTodos.addEventListener('click', function() {
+                botonesFiltro.forEach(b => b.classList.remove('active'));
+                tarjetas.forEach(t => t.style.display = '');
+            });
+        }
+    }
+    
+    // =========================================================================
+    // CARGA DE HUÉSPEDES DESDE LA API
+    // =========================================================================
+    function cargarHuespedes() {
+        huespedSelect.innerHTML = '<option value="">Cargando...</option>';
+        
+        return fetch('/hotel/api/huespedes/')
+            .then(response => {
+                if (!response.ok) throw new Error('Error de red');
+                return response.json();
+            })
+            .then(data => {
+                huespedSelect.innerHTML = '<option value="">Seleccione un huésped...</option>';
+                data.forEach(huesped => {
+                    const option = document.createElement('option');
+                    option.value = huesped.id;
+                    option.textContent = `${huesped.nombre_completo} (${huesped.documento_identidad})`;
+                    huespedSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error cargando huéspedes:', error);
+                huespedSelect.innerHTML = '<option value="">Error al cargar</option>';
+            });
+    }
+    
+    function cargarClientes() {
+        fetch('/hotel/api/clientes/')
+            .then(r => r.json())
+            .then(data => {
+                const select = document.getElementById('clienteSelect');
+                select.innerHTML = '<option value="">Mismo huésped (facturar a su nombre)</option>';
+                data.forEach(c => {
+                    select.innerHTML += `<option value="${c.id}">${c.nombre} (${c.tipo})</option>`;
+                });
+            });
+    }
+
+
+    // =========================================================================
+    // MANEJO DEL MODAL DE CHECK-IN
+    // =========================================================================
+    function inicializarCheckinModal() {
+        document.querySelectorAll('.btn-checkin').forEach(boton => {
+            boton.addEventListener('click', function() {
+                const habitacionId = this.dataset.habitacionId;
+                const habitacionCodigo = this.dataset.habitacionCodigo;
+                
+                // Configurar el modal
+                modalHabitacionCodigo.textContent = habitacionCodigo;
+                checkinForm.action = `/hotel/habitaciones/${habitacionId}/cambiar-estado/`;
+                
+                // Cargar lista de huéspedes
+                cargarHuespedes();
+                // Cargar lista de clientes
+                cargarClientes();
+                
+                // Buscar tarifa sugerida según temporada activa
+                const hoy = new Date();
+                const manana = new Date(hoy);
+                manana.setDate(manana.getDate() + 1);
+                const hoyStr = hoy.toISOString().split('T')[0];
+                const mananaStr = manana.toISOString().split('T')[0];
+                fetch(`/hotel/api/disponibilidad/?entrada=${hoyStr}&salida=${mananaStr}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        const hab = data.disponibles.find(d => d.codigo === habitacionCodigo);
+                        if (hab && hab.tarifa_por_noche) {
+                            document.getElementById('tarifaInput').value = hab.tarifa_por_noche;
+                        }
+                    });
+                
+                // Mostrar modal
+                checkinModal.show();
+            });
+        });
+    }
+    
+    // =========================================================================
+    // CAMBIOS DE ESTADO SIMPLES (limpiar, mantenimiento, disponible)
+    // =========================================================================
+    function inicializarBotonesEstado() {
+        document.querySelectorAll('.btn-cambiar-estado').forEach(boton => {
+            boton.addEventListener('click', function() {
+                const accion = this.dataset.accion;
+                const habitacionId = this.dataset.habitacionId;
+                
+                // Crear formulario dinámico para enviar POST
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/hotel/habitaciones/${habitacionId}/cambiar-estado/`;
+                
+                // CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                form.innerHTML = `
+                    <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                    <input type="hidden" name="accion" value="${accion}">
+                `;
+                
+                document.body.appendChild(form);
+                form.submit();
+            });
+        });
+    }
+    
+    // =========================================================================
+    // CREAR NUEVO HUÉSPED DESDE EL MODAL
+    // =========================================================================
+    function inicializarNuevoHuesped() {
+        const btnNuevo = document.getElementById('btnHuespedNuevo');
+        const btnGuardar = document.getElementById('btnGuardarNuevoHuesped');
+        
+        if (btnNuevo) {
+            btnNuevo.addEventListener('click', function() {
+                nuevoHuespedModal.show();
+            });
+        }
+        
+        if (btnGuardar) {
+            btnGuardar.addEventListener('click', function() {
+                const datos = {
+                    nombres: document.getElementById('nuevoNombres').value.trim(),
+                    apellidos: document.getElementById('nuevoApellidos').value.trim(),
+                    documento_identidad: document.getElementById('nuevoDocumento').value.trim(),
+                    nacionalidad: document.getElementById('nuevoNacionalidad').value.trim() || 'Venezolano',
+                    telefono: document.getElementById('nuevoTelefono').value.trim(),
+                    email: document.getElementById('nuevoEmail').value.trim(),
+                };
+                
+                // Validación básica
+                if (!datos.nombres || !datos.apellidos || !datos.documento_identidad || !datos.telefono) {
+                    alert('Por favor complete todos los campos obligatorios (*)');
+                    return;
+                }
+                
+                // Deshabilitar botón mientras se procesa
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Guardando...';
+                
+                // Obtener CSRF token
+                const csrfToken = checkinForm.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                // Enviar a la API
+                fetch('/hotel/api/huespedes/crear/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: JSON.stringify(datos)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.error || 'Error del servidor'); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Éxito: seleccionar el nuevo huésped y cerrar modal
+                    cargarHuespedes().then(() => {
+                        // Una vez cargada la lista, seleccionar el nuevo huésped
+                        huespedSelect.value = data.id;
+                    });
+                    nuevoHuespedModal.hide();
+                    
+                    // Limpiar formulario
+                    ['nuevoNombres', 'nuevoApellidos', 'nuevoDocumento', 'nuevoNacionalidad', 'nuevoTelefono', 'nuevoEmail']
+                        .forEach(id => document.getElementById(id).value = '');
+                    document.getElementById('nuevoNacionalidad').value = 'Venezolano';
+                })
+                .catch(error => {
+                    alert('❌ Error: ' + error.message);
+                })
+                .finally(() => {
+                    // Re-habilitar botón
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-save me-1"></i>Guardar Huésped';
+                });
+            });
+        }
+    }
+    
+
+
+
+    // =========================================================================
+    // INICIALIZACIÓN
+    // =========================================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        inicializarFiltros();
+        inicializarCheckinModal();
+        inicializarBotonesEstado();
+        inicializarNuevoHuesped();
+    });
+    
+})();
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Efecto hover en tarjetas */
+    .hover-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    }
+    
+    /* Borde izquierdo según estado (refuerzo visual) */
+    .card.border-success { border-left: 4px solid #198754 !important; }
+    .card.border-danger { border-left: 4px solid #dc3545 !important; }
+    .card.border-warning { border-left: 4px solid #ffc107 !important; }
+    .card.border-secondary { border-left: 4px solid #6c757d !important; }
+    .card.border-primary { border-left: 4px solid #0d6efd !important; }
+    
+    /* Botón de filtro activo */
+    .btn-group .btn.active {
+        font-weight: bold;
+    }
+</style>
+{% endblock %}

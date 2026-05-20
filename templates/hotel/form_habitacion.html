@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block titulo %}Nueva Habitación - Hotel Manager{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'hotel:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'hotel:panel_habitaciones' %}">Panel</a></li>
+            <li class="breadcrumb-item active">Nueva Habitación</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Nueva Habitación</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Código</label>
+                                <input type="text" name="codigo" class="form-control" 
+                                       placeholder="Ej: 401" maxlength="10" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nombre</label>
+                                <input type="text" name="nombre" class="form-control" 
+                                       placeholder="Ej: Suite 401" maxlength="100" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tipo de Habitación</label>
+                                <select name="tipo" class="form-select" required>
+                                    <option value="">Seleccione...</option>
+                                    {% for tipo in view.model.tipo.field.related_model.objects.all %}
+                                    <option value="{{ tipo.id }}">{{ tipo.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ubicación</label>
+                                <select name="ubicacion" class="form-select" required>
+                                    <option value="">Seleccione...</option>
+                                    {% for ubicacion in view.model.ubicacion.field.related_model.objects.all %}
+                                    <option value="{{ ubicacion.id }}">{{ ubicacion.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Piso</label>
+                                <input type="number" name="piso" class="form-control" min="1" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Ext. Teléfono</label>
+                                <input type="text" name="extension_telefono" class="form-control" 
+                                       placeholder="Ej: 401" maxlength="10">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Notas Internas</label>
+                            <textarea name="notas_internas" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'hotel:panel_habitaciones' %}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>Guardar Habitación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

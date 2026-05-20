@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block titulo %}Dashboard - Hotel Manager{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid">
+    
+    <!-- TÍTULO Y FECHA -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">
+            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+        </h1>
+        <span class="text-muted">
+            <i class="bi bi-calendar3 me-1"></i>
+            {% now "l, d \d\e F \d\e Y" %}
+        </span>
+    </div>
+
+    <!-- TARJETAS DE ESTADO (KPIs) -->
+    <div class="row mb-4">
+        <!-- Total Habitaciones -->
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-primary shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                Total Habitaciones
+                            </div>
+                            <div class="h3 mb-0 fw-bold">{{ total_habitaciones }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-building fs-1 text-muted"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Disponibles -->
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-success shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                Disponibles
+                            </div>
+                            <div class="h3 mb-0 fw-bold">{{ habitaciones_disponibles }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-check-circle fs-1 text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ocupadas -->
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-danger shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-danger text-uppercase mb-1">
+                                Ocupadas
+                            </div>
+                            <div class="h3 mb-0 fw-bold">{{ habitaciones_ocupadas }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-door-closed fs-1 text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Otros Estados -->
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-warning shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                Limpieza / Mant.
+                            </div>
+                            <div class="h3 mb-0 fw-bold">{{ habitaciones_otros }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-tools fs-1 text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DOS COLUMNAS: Check-ins hoy + Huéspedes activos -->
+    <div class="row">
+        <!-- Check-ins de Hoy -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold">
+                        <i class="bi bi-calendar-check me-2"></i>
+                        Check-ins de Hoy
+                    </h6>
+                    <span class="badge bg-primary">{{ checkins_hoy|length }}</span>
+                </div>
+                <div class="card-body">
+                    {% if checkins_hoy %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Hora</th>
+                                        <th>Huésped</th>
+                                        <th>Habitación</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for registro in checkins_hoy %}
+                                    <tr>
+                                        <td>{{ registro.fecha_checkin|time:"H:i" }}</td>
+                                        <td>{{ registro.huesped.nombre_completo }}</td>
+                                        <td>
+                                            <span class="badge bg-danger">{{ registro.habitacion.codigo }}</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center mb-0">
+                            <i class="bi bi-info-circle me-1"></i>
+                            No hay check-ins registrados hoy.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Huéspedes en el Hotel -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold">
+                        <i class="bi bi-people-fill me-2"></i>
+                        Huéspedes en el Hotel
+                    </h6>
+                    <span class="badge bg-success">{{ hospedajes_activos|length }}</span>
+                </div>
+                <div class="card-body">
+                    {% if hospedajes_activos %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Hab.</th>
+                                        <th>Huésped</th>
+                                        <th>Desde</th>
+                                        <th>Noches</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for registro in hospedajes_activos %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-danger">{{ registro.habitacion.codigo }}</span>
+                                        </td>
+                                        <td>{{ registro.huesped.nombre_completo }}</td>
+                                        <td>{{ registro.fecha_checkin|date:"d/m" }}</td>
+                                        <td>{{ registro.noches_estadia }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center mb-0">
+                            <i class="bi bi-info-circle me-1"></i>
+                            No hay huéspedes en el hotel actualmente.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load hotel_tags %}
+
+{% block titulo %}{{ config.titulo_plural }}{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'hotel:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">{{ config.titulo_plural }}</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4><i class="bi {{ config.icono }} me-2 text-primary"></i>{{ config.titulo_plural }}</h4>
+        <a href="{{ config.prefix_url }}nuevo/" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Nuevo
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-3">
+            <div class="table-responsive">
+                <table id="datatable" class="table table-hover align-middle w-100">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:50px">#</th>
+                            {% for campo in campos %}
+                            <th>{{ campo|title }}</th>
+                            {% endfor %}
+                            <th class="text-end" style="width:110px">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for obj in object_list %}
+                        <tr>
+                            <td class="text-muted small">{{ forloop.counter }}</td>
+                            {% for campo in campos %}
+                            <td>
+                                {% if campo == 'activo' %}
+                                    {% if obj|get_attr:campo %}
+                                    <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                    {% endif %}
+                                {% elif campo == 'color' %}
+                                    <span class="badge" style="background-color:{{ obj|get_attr:campo }}; width:25px;">&nbsp;</span>
+                                    <small>{{ obj|get_attr:campo }}</small>
+                                {% elif campo == 'disponible' %}
+                                    {% if obj|get_attr:campo %}
+                                    <span class="badge bg-success">Sí</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">No</span>
+                                    {% endif %}
+                                {% elif campo == 'precio_publico' or campo == 'precio_huesped' %}
+                                    $ {{ obj|get_attr:campo|floatformat:2 }}
+                                {% else %}
+                                    {{ obj|get_attr:campo }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ config.prefix_url }}{{ obj.pk }}/editar/" class="btn btn-outline-primary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{{ config.prefix_url }}{{ obj.pk }}/eliminar/" class="btn btn-outline-danger" title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="100" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                No hay {{ config.titulo_plural|lower }} registrados.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#datatable').DataTable({
+        language: {
+            url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json'
+        },
+        pageLength: 5,
+        order: [[0, 'asc']],
+        responsive: true,
+        dom: '<"row mb-2"<"col-md-6"l><"col-md-6"f>>rt<"row mt-2"<"col-md-6"i><"col-md-6"p>>',
+        initComplete: function() {
+            $('.dataTables_filter input').addClass('form-control form-control-sm');
+            $('.dataTables_length select').addClass('form-select form-select-sm');
+        }
+    });
+});
+</script>
+{% endblock %}

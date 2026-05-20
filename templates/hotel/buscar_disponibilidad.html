@@ -1,0 +1,350 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block titulo %}Nueva Reserva - Hotel Manager{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid">
+    <h3 class="mb-4"><i class="bi bi-calendar-plus me-2"></i>Nueva Reserva</h3>
+    
+    <!-- FORMULARIO DE BÚSQUEDA -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Tipo de Habitación</label>
+                    <select id="filtroTipo" class="form-select">
+                        <option value="">Todos los tipos</option>
+                        {% for tipo in tipos_habitacion %}
+                        <option value="{{ tipo.id }}">{{ tipo.nombre }} (máx {{ tipo.capacidad_maxima }} pers.)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Fecha Entrada</label>
+                    <input type="date" id="filtroEntrada" class="form-control" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Fecha Salida</label>
+                    <input type="date" id="filtroSalida" class="form-control" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Personas</label>
+                    <input type="number" id="filtroPersonas" class="form-control" min="1" value="1">
+                </div>
+                <div class="col-md-3">
+                    <button type="button" id="btnBuscar" class="btn btn-primary w-100">
+                        <i class="bi bi-search me-1"></i>Buscar Disponibles
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- RESULTADOS -->
+    <div id="resultados" class="row"></div>
+    
+    <!-- MENSAJE SIN RESULTADOS -->
+    <div id="sinResultados" class="text-center py-5 d-none">
+        <i class="bi bi-emoji-frown text-muted" style="font-size: 4rem;"></i>
+        <h5 class="mt-3 text-muted">No hay habitaciones disponibles</h5>
+        <p>Intenta con otras fechas o tipo de habitación.</p>
+    </div>
+</div>
+
+<!-- MODAL PARA CONFIRMAR RESERVA -->
+<div class="modal fade" id="confirmarReservaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h6 class="modal-title">Confirmar Reserva</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="resumenReserva" class="mb-3 p-3 bg-light rounded"></div>
+                <label class="form-label fw-bold">Huésped</label>
+                <select id="selectHuespedReserva" class="form-select" required>
+                    <option value="">Seleccione...</option>
+                </select>
+                <button type="button" class="btn btn-outline-primary btn-sm mt-2 w-100" id="btnNuevoHuespedReserva">
+                    <i class="bi bi-person-plus me-1"></i>Crear Nuevo Huésped
+                </button>
+                <input type="hidden" id="confirmarHabitacionId">
+                <input type="hidden" id="confirmarEntrada">
+                <input type="hidden" id="confirmarSalida">
+                <input type="hidden" id="confirmarTarifa">
+                <input type="hidden" id="confirmarPersonas">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmarReserva">Confirmar Reserva</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL NUEVO HUÉSPED (para reservas) -->
+<div class="modal fade" id="nuevoHuespedReservaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h6 class="modal-title"><i class="bi bi-person-plus me-2"></i>Nuevo Huésped</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nombres *</label>
+                        <input type="text" class="form-control" id="reservaNuevoNombres" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Apellidos *</label>
+                        <input type="text" class="form-control" id="reservaNuevoApellidos" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Documento de Identidad *</label>
+                    <input type="text" class="form-control" id="reservaNuevoDocumento" placeholder="V12345678" required>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nacionalidad</label>
+                        <input type="text" class="form-control" id="reservaNuevoNacionalidad" value="Venezolano">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Teléfono *</label>
+                        <input type="text" class="form-control" id="reservaNuevoTelefono" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" id="reservaNuevoEmail">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnGuardarNuevoHuespedReserva">
+                    <i class="bi bi-save me-1"></i>Guardar Huésped
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    'use strict';
+    
+    const btnBuscar = document.getElementById('btnBuscar');
+    const resultadosDiv = document.getElementById('resultados');
+    const sinResultados = document.getElementById('sinResultados');
+    const confirmarModal = new bootstrap.Modal(document.getElementById('confirmarReservaModal'));
+    
+    // Cargar huéspedes al iniciar
+    function cargarHuespedes() {
+        return fetch('/hotel/api/huespedes/')
+            .then(r => r.json())
+            .then(data => {
+                const select = document.getElementById('selectHuespedReserva');
+                select.innerHTML = '<option value="">Seleccione un huésped...</option>';
+                data.forEach(h => {
+                    select.innerHTML += `<option value="${h.id}">${h.nombre_completo}</option>`;
+                });
+            });
+    }
+    cargarHuespedes();
+
+    // Modal nuevo huésped para reservas
+    const nuevoHuespedReservaModal = new bootstrap.Modal(document.getElementById('nuevoHuespedReservaModal'));
+
+    document.getElementById('btnNuevoHuespedReserva').addEventListener('click', function() {
+        nuevoHuespedReservaModal.show();
+    });
+
+    document.getElementById('btnGuardarNuevoHuespedReserva').addEventListener('click', function() {
+        const datos = {
+            nombres: document.getElementById('reservaNuevoNombres').value.trim(),
+            apellidos: document.getElementById('reservaNuevoApellidos').value.trim(),
+            documento_identidad: document.getElementById('reservaNuevoDocumento').value.trim(),
+            nacionalidad: document.getElementById('reservaNuevoNacionalidad').value.trim() || 'Venezolano',
+            telefono: document.getElementById('reservaNuevoTelefono').value.trim(),
+            email: document.getElementById('reservaNuevoEmail').value.trim(),
+        };
+        
+        if (!datos.nombres || !datos.apellidos || !datos.documento_identidad || !datos.telefono) {
+            alert('Complete todos los campos obligatorios (*)');
+            return;
+        }
+        
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Guardando...';
+        
+        fetch('/hotel/api/huespedes/crear/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+            body: JSON.stringify(datos)
+        })
+        .then(r => r.json().then(data => ({ status: r.status, data })))
+        .then(({ status, data }) => {
+            if (status === 201) {
+                cargarHuespedes().then(() => {
+                    document.getElementById('selectHuespedReserva').value = data.id;
+                });
+                nuevoHuespedReservaModal.hide();
+                ['reservaNuevoNombres','reservaNuevoApellidos','reservaNuevoDocumento','reservaNuevoTelefono','reservaNuevoEmail']
+                    .forEach(id => document.getElementById(id).value = '');
+            } else {
+                alert('Error: ' + (data.error || 'Error'));
+            }
+        })
+        .catch(err => alert('Error: ' + err.message))
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-save me-1"></i>Guardar Huésped';
+        });
+    });
+
+    // Buscar disponibilidad
+    btnBuscar.addEventListener('click', function() {
+        const tipo = document.getElementById('filtroTipo').value;
+        const entrada = document.getElementById('filtroEntrada').value;
+        const salida = document.getElementById('filtroSalida').value;
+        const personas = document.getElementById('filtroPersonas').value;
+        
+        if (!entrada || !salida) {
+            alert('Seleccione fechas de entrada y salida');
+            return;
+        }
+        if (entrada >= salida) {
+            alert('La fecha de salida debe ser posterior a la fecha de entrada');
+            return;
+        }
+        
+        let url = '/hotel/api/disponibilidad/?entrada=' + entrada + '&salida=' + salida;
+        if (tipo) url += '&tipo=' + tipo;
+        
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                resultadosDiv.innerHTML = '';
+                
+                if (data.disponibles.length === 0) {
+                    sinResultados.classList.remove('d-none');
+                    return;
+                }
+                
+                sinResultados.classList.add('d-none');
+                
+                data.disponibles.forEach(hab => {
+                    if (personas > hab.capacidad) return;
+                    
+                    const noches = Math.ceil((new Date(salida) - new Date(entrada)) / (1000 * 60 * 60 * 24));
+                    const total = hab.tarifa_por_noche ? (hab.tarifa_por_noche * noches) : 0;
+                    const tarifaFormateada = hab.tarifa_por_noche ? '$ ' + formatoNumeroLocal(hab.tarifa_por_noche) + ' / noche' : 'No definida';
+                    const totalFormateado = hab.tarifa_por_noche ? '$ ' + formatoNumeroLocal(total) : 'N/D';
+                    
+                    const card = `
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="card border-success shadow-sm h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h5 class="mb-1">${hab.tipo}</h5>
+                                            <span class="badge bg-success">${hab.codigo}</span>
+                                            <small class="text-muted ms-2">Piso ${hab.piso}</small>
+                                        </div>
+                                        <i class="bi bi-door-open text-success fs-4"></i>
+                                    </div>
+                                    <hr>
+                                    <p class="mb-1"><strong>Tarifa:</strong> ${tarifaFormateada}</p>
+                                    <p class="mb-1"><strong>Temporada:</strong> ${hab.temporada || 'N/A'}</p>
+                                    <p class="mb-1"><strong>${noches} noches:</strong> ${totalFormateado}</p>
+                                    <p class="mb-1"><strong>Capacidad:</strong> ${hab.capacidad} pers.</p>
+                                    <p class="mb-0"><strong>Ubicacion:</strong> ${hab.ubicacion}</p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <button class="btn btn-primary btn-sm w-100 btn-seleccionar"
+                                            data-id="${hab.id}"
+                                            data-codigo="${hab.codigo}"
+                                            data-tipo="${hab.tipo}"
+                                            data-tarifa="${hab.tarifa_por_noche || 0}"
+                                            data-entrada="${entrada}"
+                                            data-salida="${salida}"
+                                            data-personas="${personas}"
+                                            data-noches="${noches}"
+                                            data-total="${total}">
+                                        <i class="bi bi-check-circle me-1"></i>Seleccionar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    resultadosDiv.insertAdjacentHTML('beforeend', card);
+                });
+                
+                document.querySelectorAll('.btn-seleccionar').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.getElementById('confirmarHabitacionId').value = this.dataset.id;
+                        document.getElementById('confirmarEntrada').value = this.dataset.entrada;
+                        document.getElementById('confirmarSalida').value = this.dataset.salida;
+                        document.getElementById('confirmarTarifa').value = this.dataset.tarifa;
+                        document.getElementById('confirmarPersonas').value = this.dataset.personas;
+                        
+                        document.getElementById('resumenReserva').innerHTML = `
+                            <strong>${this.dataset.tipo}</strong> - Hab. ${this.dataset.codigo}<br>
+                            ${this.dataset.entrada} al ${this.dataset.salida} (${this.dataset.noches} noches)<br>
+                            <strong>Total: $ ${formatoNumeroLocal(this.dataset.total)}</strong>
+                        `;
+                        
+                        confirmarModal.show();
+                    });
+                });
+            });
+    });
+    
+    // Confirmar reserva
+    document.getElementById('btnConfirmarReserva').addEventListener('click', function() {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const datos = {
+            habitacion_id: document.getElementById('confirmarHabitacionId').value,
+            huesped_id: document.getElementById('selectHuespedReserva').value,
+            fecha_entrada: document.getElementById('confirmarEntrada').value,
+            fecha_salida: document.getElementById('confirmarSalida').value,
+            cantidad_personas: document.getElementById('confirmarPersonas').value,
+            tarifa: parseFloat(document.getElementById('confirmarTarifa').value) || 0,
+        };
+        
+        if (!datos.huesped_id) {
+            alert('Seleccione un huesped');
+            return;
+        }
+        
+        fetch('/hotel/api/reservas/crear/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify(datos)
+        })
+        .then(r => r.json().then(data => ({ status: r.status, data })))
+        .then(({ status, data }) => {
+            if (status === 201) {
+                alert(data.mensaje);
+                confirmarModal.hide();
+                btnBuscar.click();
+            } else {
+                alert('Error: ' + (data.error || 'Error'));
+            }
+        });
+    });
+    
+})();
+</script>
+{% endblock %}
