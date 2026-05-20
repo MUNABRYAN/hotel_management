@@ -47,6 +47,76 @@ hotel_management/
 └── media/          # Fotos subidas
 
 ============================================================
+FORMATO NUMÉRICO VENEZOLANO (999.999.999,99)
+============================================================
+
+CONFIGURACIÓN EN settings.py:
+```python
+INSTALLED_APPS = [
+    # ...
+    'django.contrib.humanize',
+]
+
+LANGUAGE_CODE = 'es-ve'
+TIME_ZONE = 'America/Caracas'
+USE_I18N = True
+USE_TZ = True
+USE_L10N = True
+USE_THOUSAND_SEPARATOR = True
+THOUSAND_SEPARATOR = '.'
+DECIMAL_SEPARATOR = ','
+NUMBER_GROUPING = 3
+
+# Forzar formato en humanize (punto para miles, coma para decimales)
+from django.conf.locale.es import formats as es_formats
+es_formats.DECIMAL_SEPARATOR = ','
+es_formats.THOUSAND_SEPARATOR = '.'
+es_formats.NUMBER_GROUPING = 3
+ARQUITECTURA POR CAPAS:
+
+Backend (modelos/vistas):
+
+Los campos IntegerField, DecimalField almacenan números Python nativos
+
+Las APIs envían números puros en JSON: {"monto": 1234567.89}
+
+NUNCA se formatea en el backend
+
+Templates Django:
+
+{% load humanize %}
+
+{{ valor|floatformat:"2g" }} → Muestra 1.234.567,89
+
+{{ valor|intcomma }} → Para enteros con separación de miles
+
+Formularios (entrada del usuario):
+
+localize=True en los DecimalField del forms.py
+
+Django muestra el valor con formato local (1.234.567,89)
+
+Al enviar, convierte automáticamente a número Python (1234567.89)
+
+form.cleaned_data ya contiene el número puro
+
+DataTables (frontend):
+
+El servidor envía datos en JSON con números puros
+
+DataTables renderiza con: Intl.NumberFormat('es-VE')
+
+La transformación es solo visual en el navegador
+
+PRINCIPIO CLAVE:
+Trabajar SIEMPRE con números estándar en backend.
+Aplicar formato SOLO en la capa de presentación.
+NO se necesita transformación manual en ningún momento.
+La configuración regional y los filtros hacen la magia automática.
+
+text
+
+============================================================
 MODELOS IMPLEMENTADOS (17 entidades)
 ============================================================
 
@@ -158,11 +228,10 @@ TODOS desde UI sin tocar admin:
 - Bootstrap 5.3 + sidebar colapsable
 - DataTables (jQuery)
 - Template tags: badge_estado, tarjeta_estado, icono_estado,
-  bootstrap_field, formato_numero, titulo_columna, get_attr
+  bootstrap_field, titulo_columna, get_attr
 - Páginas 404/500 personalizadas
 - Efectos hover en tarjetas
 - JavaScript modular (patrón IIFE)
-- Formato numérico: localize=True, floatformat:"2g"
 
 🔧 HERRAMIENTAS
 - Comando: python manage.py inicializar_datos
