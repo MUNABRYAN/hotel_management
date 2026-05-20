@@ -688,7 +688,7 @@ class CalendarioEventosAPI(LoginRequiredMixin, View):
         for r in reservas:
             eventos.append({
                 'id': f'reserva_{r.id}',
-                'title': f'{r.huesped.nombre_completo} - Hab. {r.habitacion.codigo}',
+                'title': f'📅 Hab. {r.habitacion.codigo} - {r.huesped.nombre_completo}',
                 'start': r.fecha_entrada.isoformat(),
                 'end': (r.fecha_salida + timedelta(days=1)).isoformat(),
                 'backgroundColor': '#0d6efd',
@@ -738,7 +738,7 @@ class CalendarioEventosAPI(LoginRequiredMixin, View):
             hoy = timezone.now().date()
             eventos.append({
                 'id': f'checkin_{h.id}',
-                'title': f'🟢 {h.huesped.nombre_completo} - Hab. {h.habitacion.codigo}',
+                'title': f'🏠 Hab. {h.habitacion.codigo} - {h.huesped.nombre_completo}',
                 'start': hoy.isoformat(),
                 'end': (hoy + timedelta(days=1)).isoformat(),
                 'backgroundColor': '#dc3545',

@@ -7,10 +7,12 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4><i class="bi bi-calendar3 me-2 text-primary"></i>Calendario</h4>
-        <div>
-            <span class="me-2"><span class="badge bg-primary">&nbsp;</span> Reservas</span>
-            <span class="me-2"><span class="badge bg-danger">&nbsp;</span> Check-ins activos</span>
-            <span class="me-2"><span class="badge" style="background:#ffc107;">&nbsp;</span> Temporadas</span>
+        <div class="mb-3">
+            <small class="me-3"><span class="badge bg-primary">&nbsp;&nbsp;&nbsp;</span> Reservas</small>
+            <small class="me-3"><span class="badge bg-danger">&nbsp;&nbsp;&nbsp;</span> Check-ins activos</small>
+            <small class="me-3"><span class="badge" style="background:#198754;">&nbsp;&nbsp;&nbsp;</span> Temporada Baja</small>
+            <small class="me-3"><span class="badge" style="background:#dc3545;">&nbsp;&nbsp;&nbsp;</span> Temporada Alta</small>
+            <small><span class="badge" style="background:#ffc107;">&nbsp;&nbsp;&nbsp;</span> Festivos</small>
         </div>
     </div>
 
@@ -82,6 +84,16 @@ document.addEventListener('DOMContentLoaded', function() {
             
             document.getElementById('detalleContenido').innerHTML = contenido;
             detalleModal.show();
+        },
+        eventContent: function(arg) {
+            const props = arg.event.extendedProps;
+            if (props.tipo === 'temporada') {
+                return { html: `<small class="fw-bold">${arg.event.title}</small>` };
+            }
+            if (props.tipo === 'checkin') {
+                return { html: `<small>🏠 ${props.habitacion}</small>` };
+            }
+            return { html: `<small>📅 ${props.habitacion}</small>` };
         },
         eventDidMount: function(info) {
             if (info.event.extendedProps.tipo === 'reserva') {
