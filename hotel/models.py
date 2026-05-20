@@ -95,9 +95,13 @@ class Habitacion(BaseModel):
         blank=True,
         verbose_name="Extensión telefónica"
     )
-    piso = models.PositiveSmallIntegerField(
-        verbose_name="Número de piso",
-        help_text="Para ordenamiento visual en el panel"
+    piso_seccion = models.ForeignKey(
+        'core.PisoSeccion',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='habitaciones',
+        verbose_name="Piso / Sección"
     )
     notas_internas = models.TextField(
         blank=True,
@@ -108,7 +112,7 @@ class Habitacion(BaseModel):
     class Meta:
         verbose_name = "Habitación"
         verbose_name_plural = "Habitaciones"
-        ordering = ['piso', 'codigo']
+        ordering = ['piso_seccion__orden', 'codigo']
 
     def __str__(self):
         return f"Habitación {self.codigo} - {self.tipo.nombre}"

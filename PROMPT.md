@@ -124,6 +124,7 @@ CORE:
 - BaseModel (abstracto: created_at, updated_at, activo + SoftDeleteManager)
 - UbicacionHabitacion (nombre, descripcion)
 - CaracteristicaHabitacion (nombre, icono Bootstrap)
+- PisoSeccion (nombre, tipo [PISO/CHALET/BUNGALOW/BLOQUE/ALA/CABAÑA], orden, descripcion)
 
 HOTEL:
 - TipoHabitacion (nombre, capacidad_maxima, descripcion) M2M CaracteristicaHabitacion
@@ -182,6 +183,7 @@ FUNCIONALIDADES IMPLEMENTADAS
 - Detalle (carrusel Bootstrap, características, historial de estados)
 - CRUD con fotos (vista previa al seleccionar imagen)
 - Cambios de estado: disponible ↔ limpieza ↔ mantenimiento
+- Agrupación por Piso/Sección/Chalet (configurable)
 
 ✅ CHECK-IN / CHECK-OUT
 - Modal check-in: seleccionar huésped existente o crear nuevo (AJAX)

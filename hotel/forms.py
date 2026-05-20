@@ -6,7 +6,7 @@ from core.forms import LocalizedModelForm
 class HabitacionForm(LocalizedModelForm):
     class Meta:
         model = Habitacion
-        fields = ['codigo', 'nombre', 'tipo', 'ubicacion', 'piso', 'extension_telefono', 'notas_internas']
+        fields = ['codigo', 'nombre', 'tipo', 'piso_seccion', 'ubicacion', 'extension_telefono', 'notas_internas']
 
 
 class HabitacionFotoForm(forms.ModelForm):

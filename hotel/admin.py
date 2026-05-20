@@ -28,8 +28,8 @@ class EstadoHabitacionInline(admin.TabularInline):
 
 @admin.register(Habitacion)
 class HabitacionAdmin(admin.ModelAdmin):
-    list_display = ['codigo', 'nombre', 'tipo', 'ubicacion', 'estado_str', 'piso', 'activo']
-    list_filter = ['tipo', 'ubicacion', 'piso', 'activo']
+    list_display = ['codigo', 'nombre', 'tipo', 'ubicacion', 'estado_str', 'piso_seccion', 'activo']
+    list_filter = ['tipo', 'ubicacion', 'piso_seccion', 'activo']
     search_fields = ['codigo', 'nombre']
     inlines = [HabitacionFotoInline, EstadoHabitacionInline]
     

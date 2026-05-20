@@ -175,3 +175,29 @@ class CrudConfig:
     titulo_plural = 'Registros'
     titulo_singular = 'Registro'
     icono = 'bi-gear'    
+
+
+class PisoSeccion(BaseModel):
+    """
+    Agrupación de habitaciones. Puede ser piso, chalet, bungalow, bloque, etc.
+    """
+    TIPO_CHOICES = [
+        ('PISO', 'Piso'),
+        ('CHALET', 'Chalet'),
+        ('BUNGALOW', 'Bungalow'),
+        ('BLOQUE', 'Bloque'),
+        ('ALA', 'Ala'),
+        ('CABAÑA', 'Cabaña'),
+    ]
+    nombre = models.CharField(max_length=100)
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='PISO')
+    orden = models.PositiveSmallIntegerField(default=1)
+    descripcion = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Piso / Sección"
+        verbose_name_plural = "Pisos / Secciones"
+        ordering = ['orden', 'nombre']
+
+    def __str__(self):
+        return f"{self.nombre}"    

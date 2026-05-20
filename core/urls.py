@@ -30,6 +30,8 @@ urlpatterns += generar_crud(cruds.HabitacionCrud, 'habitaciones/')
 urlpatterns += generar_crud(cruds.TemporadaCrud, 'temporadas')
 urlpatterns += generar_crud(cruds.TarifaCrud, 'tarifas')
 urlpatterns += generar_crud(cruds.ClienteCrud, 'clientes/')
+urlpatterns += generar_crud(cruds.PisoSeccionCrud, 'pisos-secciones/')
+
 
 
 

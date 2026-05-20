@@ -9,6 +9,7 @@ from temporadas.models import TipoTemporada, Temporada, TarifaHabitacion
 from restaurant.models import GrupoProducto, Producto
 from usuarios.models import Cargo, Turno, Empleado, TipoCliente
 from hotel.models import Habitacion
+from core.models import PisoSeccion
 
 class UbicacionCrud(CrudConfig):
     model = UbicacionHabitacion
@@ -174,3 +175,13 @@ class ClienteCrud(CrudConfig):
     titulo_plural = 'Clientes'
     titulo_singular = 'Cliente'
     icono = 'bi-building'    
+
+class PisoSeccionCrud(CrudConfig):
+    model = PisoSeccion
+    list_display = ['nombre', 'tipo', 'orden', 'activo']
+    fields = ['nombre', 'tipo', 'orden', 'descripcion']
+    success_url = reverse_lazy('core:crud_pisos_secciones')
+    prefix_url = '/configuracion/pisos-secciones/'
+    titulo_plural = 'Pisos / Secciones'
+    titulo_singular = 'Piso / Sección'
+    icono = 'bi-layers'

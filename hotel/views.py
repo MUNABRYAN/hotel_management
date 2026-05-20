@@ -93,23 +93,15 @@ class PanelHabitacionesView(LoginRequiredMixin, ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # Agrupar habitaciones por piso
         habitaciones = self.get_queryset()
-        pisos = {}
+        secciones = {}
         for hab in habitaciones:
-            if hab.piso not in pisos:
-                pisos[hab.piso] = []
-            pisos[hab.piso].append(hab)
-        
-        # Ordenar pisos numéricamente
-        context['habitaciones_por_piso'] = dict(sorted(pisos.items()))
-        
-        # Estados disponibles para filtros
-        context['estados_disponibles'] = EstadoHabitacion.Estado.choices
-        
+            key = str(hab.piso_seccion) if hab.piso_seccion else 'Sin sección'
+            if key not in secciones:
+                secciones[key] = []
+            secciones[key].append(hab)
+        context['habitaciones_por_seccion'] = secciones
         return context
-
 
 class DetalleHabitacionView(LoginRequiredMixin, DetailView):
     """
@@ -761,7 +753,7 @@ class HabitacionListView(LoginRequiredMixin, LV):
     model = Habitacion
     template_name = 'hotel/crud_habitacion_list.html'
     context_object_name = 'habitaciones'
-    ordering = ['piso', 'codigo']
+    ordering = ['piso_seccion__orden', 'codigo']
 
 
 class HabitacionCreateView(LoginRequiredMixin, CreateView):
