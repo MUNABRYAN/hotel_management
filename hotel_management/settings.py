@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'temporadas.apps.TemporadasConfig',
     'restaurant.apps.RestaurantConfig',
 
@@ -95,6 +96,18 @@ LANGUAGE_CODE = 'es-ve'
 TIME_ZONE = 'America/Caracas'
 USE_I18N = True
 USE_TZ = True
+USE_L10N = True
+USE_THOUSAND_SEPARATOR = True
+THOUSAND_SEPARATOR = '.'
+DECIMAL_SEPARATOR = ','
+NUMBER_GROUPING = 3
+
+# Forzar formato en humanize
+from django.conf.locale.es import formats as es_formats
+es_formats.DECIMAL_SEPARATOR = ','
+es_formats.THOUSAND_SEPARATOR = '.'
+es_formats.NUMBER_GROUPING = 3
+
 
 # =============================================================================
 # ARCHIVOS ESTÁTICOS (CSS, JS, Imágenes de diseño)

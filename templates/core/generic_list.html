@@ -92,17 +92,31 @@
 <script>
 $(document).ready(function() {
     $('#datatable').DataTable({
-        language: {
-            url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json'
-        },
-        pageLength: 5,
-        order: [[0, 'asc']],
+        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json' },
+        pageLength: 25,
         responsive: true,
-        dom: '<"row mb-2"<"col-md-6"l><"col-md-6"f>>rt<"row mt-2"<"col-md-6"i><"col-md-6"p>>',
-        initComplete: function() {
-            $('.dataTables_filter input').addClass('form-control form-control-sm');
-            $('.dataTables_length select').addClass('form-select form-select-sm');
-        }
+        columnDefs: [{
+            targets: '_all',
+            render: function(data, type) {
+                if (type === 'display' && typeof data === 'number') {
+                    return new Intl.NumberFormat('es-VE', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }).format(data);
+                }
+                if (type === 'display' && typeof data === 'string' && !isNaN(parseFloat(data))) {
+                    const num = parseFloat(data);
+                    if (num >= 1000) {
+                        return new Intl.NumberFormat('es-VE', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        }).format(num);
+                    }
+                    return data;
+                }
+                return data;
+            }
+        }]
     });
 });
 </script>

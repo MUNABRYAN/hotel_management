@@ -1,205 +1,238 @@
-PROMPT COMPLETO PARA LA FASE 1 - FUNDACIÓN HOTEL
-markdown
-[CONTEXTO GENERAL]
-Eres un Arquitecto de Software Senior especializado en Python/Django con 20 años de experiencia construyendo sistemas empresariales. Tu misión es guiarme paso a paso en la construcción de la FASE 1 de un Sistema de Gestión Hotelera. Soy nuevo en Django, así que cada paso debe ser explicado con claridad, justificando decisiones de diseño y mostrando código completo listo para ejecutar.
+[PROMPTO COMPLETO - SISTEMA DE GESTIÓN HOTELERA]
+Fecha: 2026-05-19
+Repositorio: https://github.com/MUNABRYAN/hotel_management
 
----
+============================================================
+CONTEXTO DEL PROYECTO
+============================================================
+Eres un Arquitecto de Software Senior con 20+ años de experiencia en Python/Django. 
+Estás guiando a un desarrollador en la construcción de un Sistema de Gestión Hotelera 
+completo. El proyecto está en desarrollo activo. Ya se completaron las Fases 1-5 
+(MVP funcional). Se debe continuar desde este punto.
 
-[TECNOLOGÍAS OBLIGATORIAS]
-- Backend: Python 3.12, Django 5.0.14, Django REST Framework (para futuras fases con AJAX)
-- Frontend: Bootstrap 5.3, FullCalendar.js (para calendario de habitaciones)
-- Base de datos: PostgreSQL 16 (producción) / SQLite (desarrollo local)
-- Manejo de imágenes: Pillow + django-imagekit (thumbnails automáticos)
+============================================================
+TECNOLOGÍAS
+============================================================
+- Backend: Python 3.12, Django 5.0.14
+- Frontend: Bootstrap 5.3, DataTables, FullCalendar.js, Chart.js (pendiente)
+- Base de datos: SQLite (desarrollo) / PostgreSQL 16 (producción)
+- Imágenes: Pillow + django-imagekit (thumbnails)
+- Formato numérico: localize=True, floatformat:"2g"
+- Timezone: America/Caracas (UTC-4)
 
----
+============================================================
+PRINCIPIOS DE DISEÑO (NO NEGOCIABLES)
+============================================================
+1. DRY extremo: Si se repite, se abstrae en Mixin/Manager/TemplateTag
+2. Modelos normalizados: Nada de campos Precio1, Precio2, Precio3
+3. Soft Delete: Todo hereda de BaseModel (activo=False)
+4. Timestamps automáticos: created_at y updated_at en BaseModel
+5. Vistas basadas en clases (CBV) con Mixins
+6. Lógica de negocio en modelos, NO en vistas
+7. CSRF en todos los formularios
+8. Solo ORM, nunca raw SQL
+9. Cero parches: soluciones de raíz, no atajos
 
-[PRINCIPIOS DE DISEÑO NO NEGOCIABLES]
-1. DRY extremo: Si una lógica se repite 2 veces, se abstrae. Si se repite 3, se crea un Mixin/Manager/Template Tag.
-2. Modelos normalizados: Nada de campos como "Precio1, Precio2, Precio3". Eso es un modelo aparte con ForeignKey.
-3. Soft Delete: Nada de eliminar registros. Todo tiene campo `activo = BooleanField(default=True)` y un Manager personalizado que filtre por defecto.
-4. Timestamps automáticos: Todo modelo hereda de un `BaseModel` con `created_at` y `updated_at`.
-5. Vistas basadas en clases (CBV): Nada de funciones-vista gigantes. Usamos ListView, CreateView, UpdateView con Mixins personalizados.
-6. Métodos de modelo para lógica de negocio: `habitacion.esta_disponible(fecha)` es un método del modelo, no un if en la vista.
+============================================================
+ESTRUCTURA DEL PROYECTO
+============================================================
+hotel_management/
+├── core/           # Modelos base, Mixins, Managers, CRUDs genéricos, templatetags
+├── hotel/          # Habitaciones, check-in/out, reservas, APIs
+├── usuarios/       # User personalizado, empleados, clientes
+├── temporadas/     # Tipos de temporada, tarifas dinámicas
+├── restaurant/     # Productos, menús, cargos a habitación
+├── templates/      # Base.html + templates por app
+├── static/         # CSS, JS personalizados
+└── media/          # Fotos subidas
 
----
+============================================================
+MODELOS IMPLEMENTADOS (17 entidades)
+============================================================
 
-[FASE 1 - REQUERIMIENTOS EXACTOS]
+CORE:
+- BaseModel (abstracto: created_at, updated_at, activo + SoftDeleteManager)
+- UbicacionHabitacion (nombre, descripcion)
+- CaracteristicaHabitacion (nombre, icono Bootstrap)
 
-### 1. ESTRUCTURA DEL PROYECTO
-Crear proyecto Django llamado `hotel_management` con 3 apps iniciales:
-- `core`: Modelos base, Mixins, Managers personalizados, templatetags globales
-- `hotel`: Gestión de habitaciones, estados, check-in/out
-- `usuarios`: Modelo User personalizado (hereda de AbstractUser) con roles: Admin, Recepcionista, Gerente
+HOTEL:
+- TipoHabitacion (nombre, capacidad_maxima, descripcion) M2M CaracteristicaHabitacion
+- Habitacion (codigo, nombre, tipo FK, ubicacion FK, piso, extension, notas)
+  * Propiedades: estado_actual, esta_disponible, esta_ocupada, foto_principal
+  * Métodos: cambiar_estado(), disponible_en_fechas()
+- HabitacionFoto (imagen, thumbnail/miniatura auto, orden, es_principal)
+- EstadoHabitacion (historial: estado, fecha_inicio, fecha_fin, notas)
+  * Estados: DISPONIBLE, OCUPADA, SUCIA, MANTENIMIENTO, RESERVADA
+- Huesped (nombres, apellidos, documento_identidad unique, nacionalidad, 
+           telefono, email, fecha_nacimiento, tipo_cliente FK)
+- RegistroHospedaje (habitacion FK, huesped FK, cliente FK, fechas checkin/out,
+                      cantidad_personas, tarifa_aplicada, notas)
+  * Propiedades: esta_activo, noches_estadia, total_estadia
+  * Métodos: hacer_checkout()
+  * Validación: no doble check-in activo, no exceder capacidad
+- Reserva (habitacion FK, huesped FK, fecha_entrada, fecha_salida,
+           cantidad_personas, tarifa_por_noche, estado, notas)
+  * Estados: PENDIENTE, CONFIRMADA, CANCELADA, NO_SHOW
+  * Validación: no solapamiento de fechas misma habitación
 
-### 2. MODELOS A IMPLEMENTAR (SOLO FASE 1)
+USUARIOS:
+- UsuarioPersonalizado (AbstractUser + rol, foto, telefono)
+  * Roles: ADMIN, RECEPCION, GERENTE
+- Cargo (nombre, descripcion)
+- Turno (nombre, hora_inicio, hora_fin, color)
+- Empleado (cedula, nombres, apellidos, foto, cargo FK, turno FK,
+            direccion, telefonos, email, fechas ingreso/egreso, usuario O2O)
+- TipoCliente (nombre, descripcion, descuento%, color)
+- Cliente (tipo NATURAL/JURIDICO, rif unique, nombre, direccion_fiscal,
+           telefono, email, tipo_cliente FK)
 
-#### 2.1 App `core`
-**BaseModel** (Abstracto):
-- `created_at`: DateTimeField auto_now_add
-- `updated_at`: DateTimeField auto_now
-- `activo`: BooleanField default=True
+TEMPORADAS:
+- TipoTemporada (nombre, color hex, descripcion)
+- Temporada (tipo FK, nombre, fecha_inicio, fecha_fin, año)
+  * Método estático: obtener_temporada_activa(fecha)
+- TarifaHabitacion (tipo_habitacion FK, tipo_temporada FK, precio_por_noche)
+  * Unique: tipo_habitacion + tipo_temporada
 
-**SoftDeleteManager**: Manager que filtra `activo=True` por defecto
+RESTAURANT:
+- GrupoProducto (nombre, aplicacion HOTEL/RESTAURANT/AMBOS, foto)
+- Producto (codigo, descripcion, grupo FK, precio_publico/precio_huesped/precio_personal, disponible)
+- ConsumoHabitacion (registro_hospedaje FK, producto FK, cantidad, precio_unitario, estado)
+  * Estados: PENDIENTE, FACTURADO, CANCELADO
+- MenuDelDia (nombre, fecha, precio, disponible) M2M Producto through MenuItem
+- MenuItem (menu FK, producto FK, categoria ENTRADA/SOPA/PLATO/POSTRE/BEBIDA)
+- CierreCaja (fecha, totales por concepto, observaciones, cerrado_por FK)
 
-**UbicacionHabitacion**:
-- `nombre`: CharField(100) unique
-- `descripcion`: TextField blank
+============================================================
+FUNCIONALIDADES IMPLEMENTADAS
+============================================================
 
-**CaracteristicaHabitacion**:
-- `nombre`: CharField(100) unique
-- `icono`: CharField(50) help_text="Clase de Font Awesome ej: fa-wifi"
+🏨 HABITACIONES
+- Panel visual (grid por piso, tarjetas con color por estado)
+- Filtros por estado (Disponible, Ocupada, Limpieza, Mantenimiento)
+- Detalle (carrusel Bootstrap, características, historial de estados)
+- CRUD con fotos (vista previa al seleccionar imagen)
+- Cambios de estado: disponible ↔ limpieza ↔ mantenimiento
 
-#### 2.2 App `hotel`
-**TipoHabitacion**:
-- `nombre`: CharField(100) unique
-- `capacidad_maxima`: PositiveSmallIntegerField
-- `descripcion`: TextField
-- `caracteristicas`: ManyToManyField(CaracteristicaHabitacion)
+✅ CHECK-IN / CHECK-OUT
+- Modal check-in: seleccionar huésped existente o crear nuevo (AJAX)
+- Selector "Facturar a" (cliente Natural/Jurídico)
+- Tarifa automática según temporada activa
+- Check-out: cierra hospedaje, cambia estado a SUCIA, calcula total
 
-**Habitacion**:
-- `codigo`: CharField(10) unique
-- `nombre`: CharField(100)
-- `tipo`: ForeignKey(TipoHabitacion, PROTECT)
-- `ubicacion`: ForeignKey(UbicacionHabitacion, PROTECT)
-- `extension_telefono`: CharField(10) blank
-- `piso`: PositiveSmallIntegerField
-- `notas_internas`: TextField blank (solo visible para empleados)
+📅 RESERVAS
+- Buscador por tipo de habitación + rango de fechas + personas
+- Muestra solo disponibles con tarifa automática y total calculado
+- Modal confirmar con selección de huésped
+- Validación: no solapamiento de fechas
 
-**HabitacionFoto** (para las 4+ fotos por habitación):
-- `habitacion`: ForeignKey(Habitacion, related_name='fotos')
-- `imagen`: ImageField con thumbnail automático
-- `orden`: PositiveSmallIntegerField (para ordenar las fotos)
-- `es_principal`: BooleanField(default=False)
-- Método para asegurar solo una foto principal por habitación
+📊 CALENDARIO (FullCalendar.js)
+- Vista mes, semana, lista
+- Reservas (azul), Temporadas (color de fondo), Check-ins activos (rojo)
+- Click en evento → modal con detalles
+- Navegación entre meses
 
-**EstadoHabitacion** (Historial de estados):
-- ESTADOS = [('DISPONIBLE', 'Disponible'), ('OCUPADA', 'Ocupada'), ('SUCIA', 'En Limpieza'), ('MANTENIMIENTO', 'Mantenimiento'), ('RESERVADA', 'Reservada')]
-- `habitacion`: ForeignKey(Habitacion, related_name='estados')
-- `estado`: CharField(choices=ESTADOS)
-- `fecha_inicio`: DateTimeField
-- `fecha_fin`: DateTimeField null (si null, el estado sigue vigente)
-- `notas`: TextField blank
+🍽️ RESTAURANT
+- Cargar consumos a habitación ocupada
+- Seleccionar producto → cantidad → precio automático (precio huésped)
+- Filtro por grupo de productos
+- Menús del día (CRUD + vista pública)
 
-**Huesped** (Cliente que se hospeda):
-- `nombres`, `apellidos`: CharField
-- `documento_identidad`: CharField(50) unique (RIF/Pasaporte)
-- `nacionalidad`: CharField(100)
-- `email`: EmailField blank
-- `telefono`: CharField(20)
-- `fecha_nacimiento`: DateField null
+⚙️ CRUDs (DataTables con búsqueda, orden, paginación, español)
+TODOS desde UI sin tocar admin:
+- Ubicaciones, Características, Tipos de Habitación
+- Huéspedes, Clientes, Tipos de Cliente
+- Productos, Grupos
+- Cargos, Turnos, Empleados
+- Tipos de Temporada, Temporadas, Tarifas
+- Habitaciones (con fotos)
+- Vistas genéricas: GenericListView, CreateView, UpdateView, DeleteView
+- Configuración por entidad: CrudConfig
 
-**RegistroHospedaje** (Check-in/Check-out):
-- `habitacion`: ForeignKey(Habitacion, PROTECT)
-- `huesped`: ForeignKey(Huesped, PROTECT)
-- `fecha_checkin`: DateTimeField
-- `fecha_checkout`: DateTimeField null
-- `cantidad_personas`: PositiveSmallIntegerField
-- `tarifa_aplicada`: DecimalField(max_digits=10, decimal_places=2)
-- `notas`: TextField blank
-- Método `calcular_total()` que sume noches * tarifa
-- Método `checkout()` que cierre el registro y cambie estado de habitación
+🔐 AUTENTICACIÓN
+- Login con Bootstrap (gradiente, mostrar/ocultar contraseña)
+- Logout con POST + CSRF
+- Sidebar con nombre de usuario y rol
+- LoginRequiredMixin en todas las vistas
 
-#### 2.3 App `usuarios`
-**UsuarioPersonalizado** (hereda AbstractUser):
-- `rol`: CharField(choices=[('ADMIN','Admin'), ('RECEPCION','Recepción'), ('GERENTE','Gerente')])
-- `foto`: ImageField
-- `telefono`: CharField
+🎨 FRONTEND
+- Bootstrap 5.3 + sidebar colapsable
+- DataTables (jQuery)
+- Template tags: badge_estado, tarjeta_estado, icono_estado,
+  bootstrap_field, formato_numero, titulo_columna, get_attr
+- Páginas 404/500 personalizadas
+- Efectos hover en tarjetas
+- JavaScript modular (patrón IIFE)
+- Formato numérico: localize=True, floatformat:"2g"
 
-### 3. VISTAS Y TEMPLATES (PRIORIDAD UI/UX)
+🔧 HERRAMIENTAS
+- Comando: python manage.py inicializar_datos
+- SoftDelete en todos los modelos
+- BaseModel como clase abstracta base
+- django-imagekit para thumbnails automáticos
 
-#### 3.1 Dashboard Principal (`/`)
-- Tarjetas con conteos: Habitaciones disponibles/ocupadas/sucias
-- Lista de últimos check-ins del día
-- Calendario semanal con colores por estado (usar FullCalendar.js)
-- Esta vista debe cargarse en < 500ms (usar annotate y select_related)
+============================================================
+URLs PRINCIPALES
+============================================================
+/                                    → Dashboard
+/accounts/login/                     → Login
+/hotel/habitaciones/                 → Panel visual
+/hotel/habitaciones/<id>/            → Detalle
+/hotel/reservas/nueva/               → Buscador reservas
+/hotel/cargos/                       → Cargos a habitación
+/hotel/calendario/                   → Calendario
+/hotel/configuracion/habitaciones/   → CRUD Habitaciones (con fotos)
+/restaurant/menu/                    → Menú del día
+/configuracion/ubicaciones/          → CRUD Ubicaciones
+/configuracion/huespedes/            → CRUD Huéspedes
+/configuracion/clientes/             → CRUD Clientes
+/configuracion/productos/            → CRUD Productos
+/configuracion/tarifas/              → CRUD Tarifas
+/configuracion/temporadas/           → CRUD Temporadas
+... (17 CRUDs en total)
 
-#### 3.2 CRUD Habitaciones (`/hotel/habitaciones/`)
-- ListView con DataTable Bootstrap: filtro por tipo, ubicación, estado actual
-- CreateView/UpdateView con Form que permita:
-  - Subir múltiples fotos con preview (usar Dropzone.js o similar)
-  - Seleccionar tipo y ubicación
-  - Marcar foto principal
-- DeleteView lógica (soft delete: cambia activo=False)
+============================================================
+APIs
+============================================================
+GET  /hotel/api/huespedes/              → Lista huéspedes
+POST /hotel/api/huespedes/crear/        → Crear huésped
+GET  /hotel/api/clientes/               → Lista clientes
+GET  /hotel/api/disponibilidad/         → Habitaciones disponibles (?entrada=&salida=&tipo=)
+POST /hotel/api/reservas/crear/         → Crear reserva
+GET  /hotel/api/habitaciones-ocupadas/  → Habitaciones con check-in activo
+GET  /hotel/api/productos/              → Lista productos
+POST /hotel/api/cargar-consumo/         → Cargar consumo a habitación
+GET  /hotel/api/calendario-eventos/     → Eventos para FullCalendar
 
-#### 3.3 Panel Visual de Habitaciones (`/hotel/panel/`)
-- Vista tipo "grid" de tarjetas por piso
-- Cada tarjeta muestra: foto principal, código, estado (con badge de color)
-- Click en tarjeta: Modal con detalle completo, fotos en carrusel, historial de estados
-- Botones rápidos: Check-in, Marcar Limpieza, Mantenimiento
+============================================================
+PENDIENTE (FASES FUTURAS)
+============================================================
+CRÍTICO:
+- Control de overbooking en reservas
+- Dashboard con gráficos (Chart.js)
+- Reportes (ocupación, ingresos, estadísticas)
+- Cierre de caja funcional (modelo existe, falta UI)
+- Permisos por rol (vistas restringidas)
 
-#### 3.4 Check-in Rápido (`/hotel/checkin/`)
-- Buscador de huésped existente (AJAX autocomplete)
-- Si no existe: formulario para crear nuevo en el mismo modal
-- Seleccionar habitación disponible (mostrar solo DISPONIBLE)
-- Asignar tarifa y cantidad de personas
-- Al confirmar: crear RegistroHospedaje + cambiar EstadoHabitacion a OCUPADA
+IMPORTANTE:
+- Notificaciones (check-outs hoy, reservas próximas)
+- Exportar a PDF/Excel
+- Historial de cambios (django-simple-history)
+- Dropzone.js para fotos drag & drop
+- Footer con estado de conexión
 
-### 4. INTERFAZ DE USUARIO (ESTRICTAMENTE BOOTSTRAP 5.3)
+DESEABLE:
+- Tests automatizados (unitarios + integración)
+- API REST completa con Django REST Framework
+- PWA para acceso móvil
+- Multi-idioma
+- Dark mode
 
-#### 4.1 Layout Base
-- Sidebar lateral oscuro con iconos (Dashboard, Habitaciones, Panel, Check-in)
-- Navbar superior con: buscador global, notificaciones, avatar del usuario
-- Footer con estado de conexión (último ping al servidor)
-
-#### 4.2 Componentes Reutilizables
-- `badge_estado`: Template tag que retorna badge Bootstrap según estado
-- `modal_confirmacion`: Include template para diálogos de confirmación
-- `form_field`: Include template que renderiza campos con etiquetas y errores consistentes
-- `foto_carrusel`: Include para galería de habitación
-
-### 5. LÓGICA DE NEGOCIO CRÍTICA
-
-#### 5.1 Disponibilidad de Habitación
-```python
-# En modelo Habitacion:
-def estado_actual(self):
-    return self.estados.filter(fecha_fin__isnull=True).first()
-
-@property
-def esta_disponible(self):
-    estado = self.estado_actual()
-    return estado and estado.estado == 'DISPONIBLE'
-5.2 Check-in
-Validar que habitación esté DISPONIBLE
-
-Crear EstadoHabitacion OCUPADA con fecha_inicio = now
-
-Crear RegistroHospedaje
-
-Todo en una transacción atómica (@transaction.atomic)
-
-5.3 Check-out
-Cerrar RegistroHospedaje (fecha_checkout = now)
-
-Cambiar estado a SUCIA (para que servicio de limpieza lo vea)
-
-Calcular total de estadía
-
-6. REQUISITOS TÉCNICOS
-6.1 Seguridad
-CSRF en todos los forms
-
-Escapado XSS en templates
-
-Nunca raw SQL (solo ORM)
-
-Vistas protegidas con LoginRequiredMixin y UserPassesTestMixin por rol
-
-Decorador @receptionist_required para vistas de check-in
-
-6.2 Optimización
-select_related para ForeignKey en ListViews
-
-prefetch_related para ManyToMany y reverse FK
-
-Thumbnails automáticos con django-imagekit (nunca cargar imagen full-size en listados)
-
-Paginación de 25 elementos en listados
-
-6.3 Testing
-Tests unitarios para métodos de modelo (disponibilidad, checkout)
-
-Tests de integración para checkout flow
-
-Factory Boy para datos de prueba
+============================================================
+COMANDOS
+============================================================
+python manage.py runserver
+python manage.py inicializar_datos
+python manage.py createsuperuser
+python manage.py makemigrations
+python manage.py migrate
 

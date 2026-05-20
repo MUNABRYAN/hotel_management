@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-
+{% load humanize %}
 {% block titulo %}Menú del Día - Hotel Manager{% endblock %}
 
 {% block contenido %}
@@ -32,7 +32,7 @@
                     <p class="text-muted">Sin ítems definidos</p>
                     {% endfor %}
                     <hr>
-                    <h4 class="text-center text-success">${{ menu.precio }}</h4>
+                    <h4 class="text-center text-success">${{ menu.precio|floatformat:"2g"|intcomma  }}</h4>
                 </div>
             </div>
         </div>
